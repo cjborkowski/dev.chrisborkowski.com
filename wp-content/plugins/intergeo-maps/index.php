@@ -3,17 +3,19 @@
 Plugin Name: Intergeo Maps - Google Maps Plugin
 Plugin URI: http://themeisle.com/plugins/intergeo-maps-lite/
 Description: A simple, easy and quite powerful Google Map tool to create, manage and embed custom Google Maps into your WordPress posts and pages. The plugin allows you to deeply customize look and feel of a map, add overlays like markers, rectangles, circles, polylines and polygons to your map. It could even be integraded with your Google Adsense account and show ad on your maps.
-Version: 1.0.4.1
+Version: 1.0.6
 Author: Themeisle
 Author URI: http://themeisle.com
 License: GPL v2.0 or later
 License URI: http://www.opensource.org/licenses/gpl-license.php
+Text Domain: intergeo
+Domain Path: /languages
 */
 
 // <editor-fold defaultstate="collapsed" desc="constants">
 
 define( 'INTERGEO_PLUGIN_NAME', 'intergeo' ); // don't change it whatever
-define( 'INTERGEO_VERSION',     '1.0.4.1' );
+define( 'INTERGEO_VERSION',     '1.0.6' );
 define( 'INTERGEO_ABSPATH',     dirname( __FILE__ ) );
 define( 'INTERGEO_ABSURL',      plugins_url( '/', __FILE__ ) );
 define( 'INTERGEO_PRO_URL',      "http://themeisle.com/plugins/intergeo-maps-pro/" );
@@ -50,6 +52,7 @@ function im_fs() {
 				'slug'       => 'intergeo',
 				'account'    => false,
 				'support'    => false,
+				'contact'    => false,
 				'parent'     => array(
 					'slug' => 'upload.php',
 				),
@@ -85,6 +88,15 @@ function intergeo_frontend_enqueue_scripts() {
 	wp_register_style( 'intergeo-frontend', INTERGEO_ABSURL . 'css/frontend.css', array(), INTERGEO_VERSION );
 }
 
+add_action("plugins_loaded", 'intergeo_i18n');
+function intergeo_i18n(){
+    $pluginDirName  = dirname(plugin_basename(__FILE__));
+    $domain         = INTERGEO_PLUGIN_NAME;
+    $locale         = apply_filters("plugin_locale", get_locale(), $domain);
+    load_textdomain($domain, WP_LANG_DIR . "/" . $pluginDirName . "/" . $domain . "-" . $locale . ".mo");
+    load_plugin_textdomain($domain, "", $pluginDirName . "/languages/");
+}
+
 // </editor-fold>
 
 // <editor-fold defaultstate="collapsed" desc="settings">
@@ -100,15 +112,15 @@ add_action( 'admin_init', 'intergeo_settings_init' );
 function intergeo_settings_init() {
 	register_setting( 'media', 'intergeo-settings-map-api-key', 'trim' );
 	add_settings_section( 'intergeo-settings-maps', 'Intergeo Google Maps', 'intergeo_settings_init_map', 'media' );
-	add_settings_field( 'intergeo_map_api_key', 'Maps API Key', 'intergeo_settings_print_field', 'media', 'intergeo-settings-maps', array(
+	add_settings_field( 'intergeo_map_api_key', __('Maps API Key', INTERGEO_PLUGIN_NAME), 'intergeo_settings_print_field', 'media', 'intergeo-settings-maps', array(
 		'<input type="text" name="%s" value="%s" class="regular-text">',
 		'intergeo_map_api_key',
 		esc_attr( get_option( 'intergeo_map_api_key' ) ),
 	) );
 
 	register_setting( 'media', 'intergeo_adsense_publisher_id', 'trim' );
-	add_settings_section( 'intergeo-settings-adsense', 'Intergeo Google Maps AdSense Integration', 'intergeo_settings_init_adsense', 'media' );
-	add_settings_field( 'intergeo_adsense_publisher_id', 'AdSense Publisher Id', 'intergeo_settings_print_field', 'media', 'intergeo-settings-adsense', array(
+	add_settings_section( 'intergeo-settings-adsense', __('Intergeo Google Maps AdSense Integration', INTERGEO_PLUGIN_NAME), 'intergeo_settings_init_adsense', 'media' );
+	add_settings_field( 'intergeo_adsense_publisher_id', __('AdSense Publisher Id', INTERGEO_PLUGIN_NAME), 'intergeo_settings_print_field', 'media', 'intergeo-settings-adsense', array(
 		'<input type="text" name="%s" value="%s" class="regular-text">',
 		'intergeo_adsense_publisher_id',
 		esc_attr( get_option( 'intergeo_adsense_publisher_id' ) ),
@@ -240,9 +252,10 @@ function intergeo_map_popup_init() {
 		}
 	}
 
-	intergeo_enqueue_google_maps_script( 'adsense,panoramio,weather,drawing' );
+	intergeo_enqueue_google_maps_script( 'adsense,panoramio,weather,drawing,places' );
+    wp_enqueue_script('jquery-ddslick', INTERGEO_ABSURL . 'js/jquery.ddslick.min.js', array('jquery'));
 
-	wp_enqueue_script( 'intergeo-editor', INTERGEO_ABSURL . 'js/editor.js', array( 'wp-color-picker', 'google-maps-v3', 'jquery' ), INTERGEO_VERSION );
+	wp_enqueue_script( 'intergeo-editor', INTERGEO_ABSURL . 'js/editor.js', array( 'jquery-ddslick', 'wp-color-picker', 'google-maps-v3' ), INTERGEO_VERSION );
 	wp_localize_script( 'intergeo-editor', 'intergeo_options', array(
 		'send_to_editor' => $send_to_editor,
 		'adsense'        => array( 'publisher_id' => get_option( 'intergeo_adsense_publisher_id' ) ),
@@ -378,6 +391,7 @@ function intergeo_filter_overlays_marker( $marker ) {
 		'icon'     => isset( $marker['icon'] ) ? filter_var( $marker['icon'], FILTER_VALIDATE_URL ) : '',
 		'info'     => isset( $marker['info'] ) ? trim( preg_replace( '/\<\/?script.*?\>/is', '', $marker['info'] ) ) : '',
 		'title'    => isset( $marker['title'] ) ? strip_tags( trim( $marker['title'] ) ) : '',
+		'loc'      => isset( $marker['loc'] ) ? strip_tags( trim( $marker['loc'] ) ) : '',
 	);
 }
 
@@ -944,6 +958,10 @@ add_action( 'admin_notices', 'intergeo_print_messages' );
 function intergeo_print_messages() {
 	global $pagenow;
 
+    // Added by Ash/Upwork
+    intergeo_show_nag();
+    // Added by Ash/Upwork
+
 	if ( $pagenow != 'upload.php' ) {
 		return;
 	}
@@ -956,11 +974,42 @@ function intergeo_print_messages() {
 	}
 
 	foreach ( $messages[$user_id] as $message ) {
-		printf( $message[1] ? '<div class="updated"><p>%s</p></div>' : '<div class="error"><p>%s</p></div>', $message[0] );
+		printf( $message[1] ? '<div class="updated"><p>%s</p></div>' : '<div class="error"><p>%s</p></div>', __($message[0], INTERGEO_PLUGIN_NAME) );
 	}
 
 	$messages[$user_id] = array();
 	update_option( 'intergeo_messages', $messages );
 }
+
+// Added by Ash/Upwork
+add_action( 'admin_enqueue_scripts', 'intergeo_enqueue_scripts' );
+function intergeo_enqueue_scripts()
+{
+	wp_enqueue_script( 'intergeo-misc', INTERGEO_ABSURL . 'js/misc.js', array( 'jquery' ), INTERGEO_VERSION );
+	wp_localize_script( 'intergeo-misc', 'intergeo_misc', array(
+        "ajax"  => array(
+            "action"    => "intergeo_dismiss_nag",
+            "nonce"     => wp_create_nonce(INTERGEO_PLUGIN_NAME . INTERGEO_VERSION),
+        )
+    ));
+}
+
+add_action( 'wp_ajax_intergeo_dismiss_nag', 'intergeo_dismiss_nag' );
+function intergeo_dismiss_nag() {
+    check_ajax_referer(INTERGEO_PLUGIN_NAME . INTERGEO_VERSION, "security");
+
+    update_option("intergeo_nag_dismissed", true);
+    wp_die();
+}
+
+function intergeo_show_nag()
+{
+	global $pagenow;
+
+    if ( $pagenow == 'plugins.php' && !get_option("intergeo_nag_dismissed", false)) {
+        include_once INTERGEO_ABSPATH . '/templates/nag.php';
+    }
+}
+// Added by Ash/Upwork
 
 // </editor-fold>
