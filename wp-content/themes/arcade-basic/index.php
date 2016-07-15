@@ -16,10 +16,9 @@ get_header(); ?>
 	<div class="container">
 		<div class="row">
         	<div id="primary" <?php bavotasan_primary_attr(); ?>>
-			<?php
+        		<?php
         		if ( have_posts() ) :
-        			query_posts($query_string . '&orderby=date&order=ASC');
-				while ( have_posts() ) : the_post();
+        			while ( have_posts() ) : the_post();
         				get_template_part( 'content', get_post_format() );
         			endwhile;
 
@@ -33,4 +32,3 @@ get_header(); ?>
 		</div>
 	</div>
 <?php get_footer(); ?>
-<!-- is this thing on -->

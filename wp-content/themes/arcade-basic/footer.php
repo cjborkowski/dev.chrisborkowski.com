@@ -13,8 +13,7 @@ $bavotasan_theme_options = bavotasan_theme_options();
 	<footer id="footer" role="contentinfo">
 		<div id="footer-content" class="container">
 			<div class="row">
-				<div class="copyright col-lg-12">
-					<span class="pull-left"><?php printf( __( 'Copyright &copy; %s %s. All Rights Reserved.', 'arcade' ), date( 'Y' ), ' <a href="' . home_url() . '">' . get_bloginfo( 'name' ) .'</a>' ); ?></span>
+				<div class="copyright col-lg-12"><span class="pull-left"><?php printf( __( 'Copyright &copy; %s %s. All Rights Reserved.', 'arcade-basic' ), date( 'Y' ), ' <a href="' . home_url() . '">' . get_bloginfo( 'name' ) .'</a>' ); ?></span>
 					
 				</div><!-- .col-lg-12 -->
 			</div><!-- .row -->
